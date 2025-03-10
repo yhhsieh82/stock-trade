@@ -1,0 +1,6 @@
+logging.level.org.springframework.data.redis: DEBUG
+
+spring:
+  redis:
+    host: 127.0.0.1
+    port: 6379
