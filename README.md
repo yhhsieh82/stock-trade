@@ -80,6 +80,12 @@ engine.submitOrder(new Order("AAPL", Order.Type.SELL, 149.0, 5));
 engine.stop();
 ```
 
-## License
+## Tasks
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+- [x] 20250310 Fix race condition in OrderMatcher#matchOrder and OrderBook#addOrder
+```java
+race condition example:
+step1. OrderMatcher#matchOrder peek a sellOrder at 10
+step2. OrderBook#addOrder add a sellOrder at 8
+step3. OrderMatcher#matchOrder poll the sellOrder at 8. causing the created trade sets the sell price at 10, but it is 8 that is acutally traded.
+```

@@ -36,13 +36,17 @@ public class OrderBook {
             buyOrders.computeIfAbsent(symbol, k -> new PriorityBlockingQueue<>(
                 11, Comparator.<Order>comparingDouble(o -> -o.getPrice())
                     .thenComparingLong(Order::getTimestamp)));
-            buyOrders.get(symbol).add(order);
+            synchronized (buyOrders.get(symbol)) {
+                buyOrders.get(symbol).add(order);
+            }
         } else {
             // For sell orders, we want lower prices to have higher priority
             sellOrders.computeIfAbsent(symbol, k -> new PriorityBlockingQueue<>(
                 11, Comparator.<Order>comparingDouble(Order::getPrice)
                     .thenComparingLong(Order::getTimestamp)));
-            sellOrders.get(symbol).add(order);
+            synchronized (sellOrders.get(symbol)) {
+                sellOrders.get(symbol).add(order);
+            }
         }
     }
     

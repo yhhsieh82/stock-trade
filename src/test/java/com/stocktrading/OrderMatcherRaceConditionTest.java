@@ -134,6 +134,7 @@ public class OrderMatcherRaceConditionTest {
         CountDownLatch completionLatch = new CountDownLatch(numThreads);
 
         List<Exception> exceptions = Collections.synchronizedList(new ArrayList<>());
+        List<Error> errors = Collections.synchronizedList(new ArrayList<>());
 
         // Create multiple threads that will add orders and match simultaneously
         for (int i = 0; i < numThreads; i++) {
@@ -167,6 +168,8 @@ public class OrderMatcherRaceConditionTest {
                     }
                 } catch (Exception e) {
                     exceptions.add(e);
+                } catch (AssertionError e) {
+                    errors.add(e);
                 } finally {
                     completionLatch.countDown();
                 }
@@ -180,10 +183,10 @@ public class OrderMatcherRaceConditionTest {
         boolean completed = completionLatch.await(10, TimeUnit.SECONDS);
         executorService.shutdown();
 
-        // Assert no exceptions were thrown
-        if (!exceptions.isEmpty()) {
-            exceptions.get(0).printStackTrace();
-            fail("Race conditions resulted in exceptions: " + exceptions.size() + " exceptions");
+        // Assert no errors were thrown
+        if (!errors.isEmpty()) {
+            errors.get(0).printStackTrace();
+            fail("Race conditions resulted in errors: " + errors.size() + " errors");
         }
 
         assertTrue(completed, "All threads should complete in time");

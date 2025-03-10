@@ -2,6 +2,7 @@ package com.stocktrading;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -68,50 +69,53 @@ public class OrderMatcher implements Runnable {
     void matchOrders(String symbol) {
         // Continue matching as long as there are both buy and sell orders
         while (orderBook.hasBuyOrders(symbol) && orderBook.hasSellOrders(symbol)) {
-            // Get the highest priority buy and sell orders
-            Order buyOrder = orderBook.getBuyOrders(symbol).peek();
-            Order sellOrder = orderBook.getSellOrders(symbol).peek();
-            
-            if (buyOrder == null || sellOrder == null) {
-                break;
-            }
-            
-            // Check if the orders can be matched (buy price >= sell price)
-            if (sellOrder.getPrice() <= buyOrder.getPrice()) {
-                // Remove the orders from the queues
-                Order pollBuyOrder = orderBook.getBuyOrders(symbol).poll();
-                Order pollSellOrder = orderBook.getSellOrders(symbol).poll();
+            synchronized (orderBook.getBuyOrders(symbol)) {
+                synchronized (orderBook.getSellOrders(symbol)) {
+                    // Get the highest priority buy and sell orders
+                    Order buyOrder = orderBook.getBuyOrders(symbol).peek();
+                    Order sellOrder = orderBook.getSellOrders(symbol).peek();
+                    
+                    if (buyOrder == null || sellOrder == null) {
+                        break;
+                    }
+                    
+                    // Check if the orders can be matched (buy price >= sell price)
+                    if (sellOrder.getPrice() <= buyOrder.getPrice()) {
+                        // Remove the orders from the queues - must be the same as what we peeked
+                        // due to synchronization
+                        Order pollBuyOrder = orderBook.getBuyOrders(symbol).poll();
+                        Order pollSellOrder = orderBook.getSellOrders(symbol).poll();
 
-                // TODO test race condition
-                if (!pollBuyOrder.equals(buyOrder) || !pollSellOrder.equals(sellOrder)) {
-                    throw new IllegalArgumentException("poll not equals to peek");
+                        assert Objects.equals(pollBuyOrder, buyOrder) && Objects.equals(pollSellOrder, sellOrder) :
+                            "Race condition: peek/poll mismatch detected";
+
+                        // Determine the matched quantity and price
+                        int matchedQuantity = Math.min(buyOrder.getQuantity(), sellOrder.getQuantity());
+                        double tradePrice = sellOrder.getPrice(); // Use the sell price for the trade
+                        
+                        // Create a trade
+                        Trade trade = new Trade(symbol, tradePrice, matchedQuantity);
+                        trades.add(trade);
+                        
+                        System.out.println(trade);
+                        
+                        // Handle partial matches
+                        if (matchedQuantity < buyOrder.getQuantity()) {
+                            // Create a new buy order with the remaining quantity
+                            buyOrder.reduceQuantity(matchedQuantity);
+                            orderBook.addOrder(buyOrder);
+                        }
+                        
+                        if (matchedQuantity < sellOrder.getQuantity()) {
+                            // Create a new sell order with the remaining quantity
+                            sellOrder.reduceQuantity(matchedQuantity);
+                            orderBook.addOrder(sellOrder);
+                        }
+                    } else {
+                        // Orders cannot be matched, so stop trying
+                        break;
+                    }
                 }
-
-                // Determine the matched quantity and price
-                int matchedQuantity = Math.min(buyOrder.getQuantity(), sellOrder.getQuantity());
-                double tradePrice = sellOrder.getPrice(); // Use the sell price for the trade
-
-                // Create a trade
-                Trade trade = new Trade(symbol, tradePrice, matchedQuantity);
-                trades.add(trade);
-
-                System.out.println(trade);
-
-                // Handle partial matches
-                if (matchedQuantity < buyOrder.getQuantity()) {
-                    // Create a new buy order with the remaining quantity
-                    buyOrder.reduceQuantity(matchedQuantity);
-                    orderBook.addOrder(buyOrder);
-                }
-
-                if (matchedQuantity < sellOrder.getQuantity()) {
-                    // Create a new sell order with the remaining quantity
-                    sellOrder.reduceQuantity(matchedQuantity);
-                    orderBook.addOrder(sellOrder);
-                }
-            } else {
-                // Orders cannot be matched, so stop trying
-                break;
             }
         }
     }
