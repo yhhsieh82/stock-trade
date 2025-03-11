@@ -66,7 +66,7 @@ public class OrderMatcher implements Runnable {
      * 
      * @param symbol The stock symbol
      */
-    void matchOrders(String symbol) {
+    public void matchOrders(String symbol) {
         // Continue matching as long as there are both buy and sell orders
         while (orderBook.hasBuyOrders(symbol) && orderBook.hasSellOrders(symbol)) {
             synchronized (orderBook.getBuyOrders(symbol)) {

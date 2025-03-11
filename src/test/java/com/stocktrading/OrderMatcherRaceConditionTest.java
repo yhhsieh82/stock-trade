@@ -39,7 +39,7 @@ public class OrderMatcherRaceConditionTest {
                 // Create a custom implementation of OrderMatcher to expose the race condition
                 OrderMatcher customMatcher = new OrderMatcher(orderBook, symbols) {
                     @Override
-                    void matchOrders(String symbol) {
+                    public void matchOrders(String symbol) {
                         // Check if there are orders to match
                         if (orderBook.hasBuyOrders(symbol) && orderBook.hasSellOrders(symbol)) {
                             // Get the highest priority buy and sell orders using peek

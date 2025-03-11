@@ -80,6 +80,55 @@ engine.submitOrder(new Order("AAPL", Order.Type.SELL, 149.0, 5));
 engine.stop();
 ```
 
+## Performance Benchmarking
+
+### Running Benchmarks
+
+```bash
+# Run all benchmarks
+mvn clean test-compile integration-test -Pbenchmark
+
+# Run specific benchmark
+mvn test-compile exec:java@run-benchmarks -Pbenchmark -Dexec.args="OrderBookBenchmark.synchronizedOrderBookAddOnly"
+```
+
+### Available Benchmarks
+
+1. **Add-Only Performance** (`synchronizedOrderBookAddOnly`)
+   - Measures throughput of concurrent order additions
+   - Tests scalability of order book's add operation
+
+2. **Mixed Workload** (`synchronizedOrderBookMatchingWorkload`) 
+   - Simulates real trading scenario with concurrent adds and matches
+   - Half threads add orders, half perform matching
+
+3. **High Contention** (`synchronizedOrderBookHighContention`)
+   - Tests performance under extreme contention
+   - All threads operate on same symbol simultaneously
+
+### Configuration Parameters
+
+- `numThreads`: 1, 2, 4, 8, 16, 32
+- `numOrders`: 100, 1000, 10000
+- `symbol`: "AAPL" (default)
+
+### Analyzing Results
+
+The benchmark suite includes a results analyzer:
+
+```bash
+# Save results to file
+mvn test-compile exec:java@run-benchmarks -Pbenchmark > results.txt
+
+# Analyze results
+java -cp target/test-classes com.stocktrading.benchmark.BenchmarkResultsAnalyzer results.txt
+```
+
+The analyzer provides:
+- Throughput metrics by thread count
+- Scaling efficiency analysis
+- Contention impact assessment
+
 ## Tasks
 
 - [x] 20250310 Fix race condition in OrderMatcher#matchOrder and OrderBook#addOrder
