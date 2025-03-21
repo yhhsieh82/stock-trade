@@ -85,11 +85,14 @@ engine.stop();
 ### Running Benchmarks
 
 ```bash
+# Build the benchmark JAR
+mvn clean package -Pbenchmark
+
 # Run all benchmarks
-mvn clean test-compile integration-test -Pbenchmark
+java -jar target/benchmarks.jar
 
 # Run specific benchmark
-mvn test-compile exec:java@run-benchmarks -Pbenchmark -Dexec.args="OrderBookBenchmark.synchronizedOrderBookAddOnly"
+java -jar target/benchmarks.jar OrderBookBenchmark.synchronizedOrderBookAddOnly
 ```
 
 ### Available Benchmarks
@@ -118,10 +121,10 @@ The benchmark suite includes a results analyzer:
 
 ```bash
 # Save results to file
-mvn test-compile exec:java@run-benchmarks -Pbenchmark > results.txt
+mvn compile exec:java@run-benchmarks -Pbenchmark > results.txt
 
 # Analyze results
-java -cp target/test-classes com.stocktrading.benchmark.BenchmarkResultsAnalyzer results.txt
+java -cp target/classes com.stocktrading.benchmark.BenchmarkResultsAnalyzer results.txt
 ```
 
 The analyzer provides:
@@ -138,3 +141,6 @@ step1. OrderMatcher#matchOrder peek a sellOrder at 10
 step2. OrderBook#addOrder add a sellOrder at 8
 step3. OrderMatcher#matchOrder poll the sellOrder at 8. causing the created trade sets the sell price at 10, but it is 8 that is acutally traded.
 ```
+
+- [x] 20250317 add benchmark for comparison between locked data structure and lock free data structure
+- [x] 20250321 implement lock free orderBook and OrderMatcher

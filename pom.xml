@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.example</groupId>
 	<artifactId>stock-trade</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0.0-SNAPSHOT</version>
 	<name>stock-trade</name>
 	<properties>
 		<java.version>11</java.version>
@@ -42,6 +42,26 @@
 			<artifactId>jmh-generator-annprocess</artifactId>
 			<version>1.35</version>
 			<scope>provided</scope>
+		</dependency>
+
+		<!-- JUnit Platform Suite API -->
+		<dependency>
+			<groupId>org.junit.platform</groupId>
+			<artifactId>junit-platform-suite</artifactId>
+			<version>1.8.2</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.platform</groupId>
+			<artifactId>junit-platform-suite-api</artifactId>
+			<version>1.8.2</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.platform</groupId>
+			<artifactId>junit-platform-suite-engine</artifactId>
+			<version>1.8.2</version>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 
@@ -85,24 +105,34 @@
 			<id>benchmark</id>
 			<build>
 				<plugins>
+					<!-- Remove the exec plugin -->
 					<plugin>
-						<groupId>org.codehaus.mojo</groupId>
-						<artifactId>exec-maven-plugin</artifactId>
-						<version>3.0.0</version>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-shade-plugin</artifactId>
+						<version>3.2.4</version>
 						<executions>
 							<execution>
-								<id>run-benchmarks</id>
-								<phase>integration-test</phase>
+								<phase>package</phase>
 								<goals>
-									<goal>java</goal>
+									<goal>shade</goal>
 								</goals>
 								<configuration>
-									<mainClass>org.openjdk.jmh.Main</mainClass>
-									<includeProjectDependencies>true</includeProjectDependencies>
-									<includePluginDependencies>true</includePluginDependencies>
-									<arguments>
-										<argument>.*Benchmark.*</argument>
-									</arguments>
+									<finalName>benchmarks</finalName>
+									<transformers>
+										<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+											<mainClass>org.openjdk.jmh.Main</mainClass>
+										</transformer>
+									</transformers>
+									<filters>
+										<filter>
+											<artifact>*:*</artifact>
+											<excludes>
+												<exclude>META-INF/*.SF</exclude>
+												<exclude>META-INF/*.DSA</exclude>
+												<exclude>META-INF/*.RSA</exclude>
+											</excludes>
+										</filter>
+									</filters>
 								</configuration>
 							</execution>
 						</executions>
