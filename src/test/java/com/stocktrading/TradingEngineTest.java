@@ -13,7 +13,8 @@ public class TradingEngineTest {
     @Test
     public void testStartAndStop() throws InterruptedException {
         List<String> symbols = Arrays.asList("AAPL", "MSFT", "GOOGL");
-        TradingEngine engine = new TradingEngine(symbols);
+
+        TradingEngine engine = TradingEngineFactory.createLockedTradingEngine(symbols);
         
         // Start the engine
         engine.start();
@@ -30,7 +31,7 @@ public class TradingEngineTest {
     @Test
     public void testSubmitOrder() {
         List<String> symbols = Arrays.asList("AAPL");
-        TradingEngine engine = new TradingEngine(symbols);
+        TradingEngine engine = TradingEngineFactory.createLockedTradingEngine(symbols);
         
         // Start the engine
         engine.start();
@@ -49,7 +50,7 @@ public class TradingEngineTest {
     @Test
     public void testOrderMatching() throws InterruptedException {
         List<String> symbols = Arrays.asList("AAPL");
-        TradingEngine engine = new TradingEngine(symbols);
+        TradingEngine engine = TradingEngineFactory.createLockedTradingEngine(symbols);
         
         // Start the engine
         engine.start();
@@ -78,7 +79,7 @@ public class TradingEngineTest {
     @Test
     public void testMultipleSymbols() throws InterruptedException {
         List<String> symbols = Arrays.asList("AAPL", "MSFT", "GOOGL");
-        TradingEngine engine = new TradingEngine(symbols);
+        TradingEngine engine = TradingEngineFactory.createLockedTradingEngine(symbols);
         
         // Start the engine
         engine.start();

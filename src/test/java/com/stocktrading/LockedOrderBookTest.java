@@ -1,17 +1,20 @@
 package com.stocktrading;
 
-import org.junit.jupiter.api.Test;
 import java.util.concurrent.PriorityBlockingQueue;
-import static org.junit.jupiter.api.Assertions.*;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests for the OrderBook class.
  */
-public class OrderBookTest {
+public class LockedOrderBookTest {
     
     @Test
     public void testAddBuyOrder() {
-        OrderBook orderBook = new OrderBook();
+        LockedOrderBook orderBook = new LockedOrderBook();
         Order order = new Order("AAPL", Order.Type.BUY, 150.0, 10);
         
         orderBook.addOrder(order);
@@ -26,7 +29,7 @@ public class OrderBookTest {
     
     @Test
     public void testAddSellOrder() {
-        OrderBook orderBook = new OrderBook();
+        LockedOrderBook orderBook = new LockedOrderBook();
         Order order = new Order("AAPL", Order.Type.SELL, 150.0, 10);
         
         orderBook.addOrder(order);
@@ -41,7 +44,7 @@ public class OrderBookTest {
     
     @Test
     public void testBuyOrderPriority() {
-        OrderBook orderBook = new OrderBook();
+        LockedOrderBook orderBook = new LockedOrderBook();
         
         // Higher price should have higher priority
         Order order1 = new Order("AAPL", Order.Type.BUY, 150.0, 10);
@@ -57,7 +60,7 @@ public class OrderBookTest {
     
     @Test
     public void testSellOrderPriority() {
-        OrderBook orderBook = new OrderBook();
+        LockedOrderBook orderBook = new LockedOrderBook();
         
         // Lower price should have higher priority
         Order order1 = new Order("AAPL", Order.Type.SELL, 150.0, 10);
@@ -73,7 +76,7 @@ public class OrderBookTest {
     
     @Test
     public void testTimePriority() throws InterruptedException {
-        OrderBook orderBook = new OrderBook();
+        LockedOrderBook orderBook = new LockedOrderBook();
         
         // Same price, earlier timestamp should have higher priority
         Order order1 = new Order("AAPL", Order.Type.BUY, 150.0, 10);

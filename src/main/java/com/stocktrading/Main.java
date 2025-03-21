@@ -15,7 +15,7 @@ public class Main {
         List<String> symbols = Arrays.asList("AAPL", "MSFT", "GOOGL");
         
         // Create and start the trading engine
-        TradingEngine engine = new TradingEngine(symbols);
+        TradingEngine engine = TradingEngineFactory.createLockedTradingEngine(symbols);
         engine.start();
         
         // Create a thread pool for submitting orders

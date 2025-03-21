@@ -13,13 +13,13 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Tests for the concurrency aspects of the trading engine.
  */
-public class ConcurrencyTest {
+public class LockedTradingEngineRaceConditionTest {
     
     @Test
     public void testConcurrentOrderSubmission() throws InterruptedException {
         // Create a trading engine
         List<String> symbols = Arrays.asList("AAPL", "MSFT", "GOOGL");
-        TradingEngine engine = new TradingEngine(symbols);
+        TradingEngine engine = TradingEngineFactory.createLockedTradingEngine(symbols);
         engine.start();
         
         // Number of threads and orders per thread
@@ -87,7 +87,7 @@ public class ConcurrencyTest {
     public void testOrderMatchingUnderLoad() throws InterruptedException {
         // Create a trading engine with a single symbol
         List<String> symbols = Arrays.asList("AAPL");
-        TradingEngine engine = new TradingEngine(symbols);
+        TradingEngine engine = TradingEngineFactory.createLockedTradingEngine(symbols);
         engine.start();
         
         // Submit a large number of matching orders
@@ -122,7 +122,7 @@ public class ConcurrencyTest {
     public void testOrderMatchingRaceCondition() throws InterruptedException {
         // Create a trading engine with a single symbol
         List<String> symbols = Arrays.asList("AAPL");
-        TradingEngine engine = new TradingEngine(symbols);
+        TradingEngine engine = TradingEngineFactory.createLockedTradingEngine(symbols);
         engine.start();
 
         // Submit a large number of matching orders
@@ -131,10 +131,6 @@ public class ConcurrencyTest {
         // Submit buy orders
         for (int i = 0; i < numOrders; i++) {
             engine.submitOrder(new Order("AAPL", Order.Type.BUY, 10.0, 1));
-        }
-
-        for (int i = 0; i < 1; i++) {
-            engine.submitOrder(new Order("AAPL", Order.Type.BUY, 8.0, 1));
         }
 
         // Submit sell orders

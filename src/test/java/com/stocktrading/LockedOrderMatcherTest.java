@@ -10,12 +10,12 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Tests for the OrderMatcher class.
  */
-public class OrderMatcherTest {
+public class LockedOrderMatcherTest {
     
     @Test
     public void testExactMatch() throws InterruptedException {
-        OrderBook orderBook = new OrderBook();
-        OrderMatcher matcher = new OrderMatcher(orderBook, Arrays.asList("AAPL"));
+        LockedOrderBook orderBook = new LockedOrderBook();
+        LockedOrderMatcher matcher = new LockedOrderMatcher(orderBook, Arrays.asList("AAPL"));
         
         // Start the matcher in a separate thread
         ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -50,8 +50,8 @@ public class OrderMatcherTest {
     
     @Test
     public void testPartialMatch() throws InterruptedException {
-        OrderBook orderBook = new OrderBook();
-        OrderMatcher matcher = new OrderMatcher(orderBook, Arrays.asList("AAPL"));
+        LockedOrderBook orderBook = new LockedOrderBook();
+        LockedOrderMatcher matcher = new LockedOrderMatcher(orderBook, Arrays.asList("AAPL"));
         
         // Start the matcher in a separate thread
         ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -90,8 +90,8 @@ public class OrderMatcherTest {
     
     @Test
     public void testMultipleMatches() throws InterruptedException {
-        OrderBook orderBook = new OrderBook();
-        OrderMatcher matcher = new OrderMatcher(orderBook, Arrays.asList("AAPL"));
+        LockedOrderBook orderBook = new LockedOrderBook();
+        LockedOrderMatcher matcher = new LockedOrderMatcher(orderBook, Arrays.asList("AAPL"));
         
         // Start the matcher in a separate thread
         ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -126,8 +126,8 @@ public class OrderMatcherTest {
     
     @Test
     public void testPricePriority() throws InterruptedException {
-        OrderBook orderBook = new OrderBook();
-        OrderMatcher matcher = new OrderMatcher(orderBook, Arrays.asList("AAPL"));
+        LockedOrderBook orderBook = new LockedOrderBook();
+        LockedOrderMatcher matcher = new LockedOrderMatcher(orderBook, Arrays.asList("AAPL"));
         
         // Start the matcher in a separate thread
         ExecutorService executor = Executors.newSingleThreadExecutor();

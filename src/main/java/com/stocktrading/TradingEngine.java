@@ -12,15 +12,13 @@ public class TradingEngine {
     private final OrderBook orderBook;
     private final OrderMatcher orderMatcher;
     private final ExecutorService executor;
-    
+
     /**
      * Creates a new trading engine.
-     * 
-     * @param symbols The list of stock symbols to trade
      */
-    public TradingEngine(List<String> symbols) {
-        this.orderBook = new OrderBook();
-        this.orderMatcher = new OrderMatcher(orderBook, symbols);
+    public TradingEngine(OrderBook orderBook, OrderMatcher orderMatcher) {
+        this.orderBook = orderBook;
+        this.orderMatcher = orderMatcher;
         this.executor = Executors.newCachedThreadPool();
     }
     

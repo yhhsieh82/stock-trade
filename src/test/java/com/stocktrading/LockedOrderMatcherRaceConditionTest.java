@@ -12,14 +12,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class OrderMatcherRaceConditionTest {
+public class LockedOrderMatcherRaceConditionTest {
 
     @Test
     public void testRaceConditionBetweenPeekAndPoll() throws InterruptedException {
         // Setup
-        OrderBook orderBook = new OrderBook();
+        LockedOrderBook orderBook = new LockedOrderBook();
         List<String> symbols = Collections.singletonList("AAPL");
-        OrderMatcher orderMatcher = new OrderMatcher(orderBook, symbols);
+        LockedOrderMatcher orderMatcher = new LockedOrderMatcher(orderBook, symbols);
 
         // Create initial buy and sell orders
         Order buyOrder = new Order("AAPL", Order.Type.BUY, 100.0, 10);
@@ -37,7 +37,7 @@ public class OrderMatcherRaceConditionTest {
         Thread matcherThread = new Thread(() -> {
             try {
                 // Create a custom implementation of OrderMatcher to expose the race condition
-                OrderMatcher customMatcher = new OrderMatcher(orderBook, symbols) {
+                LockedOrderMatcher customMatcher = new LockedOrderMatcher(orderBook, symbols) {
                     @Override
                     public void matchOrders(String symbol) {
                         // Check if there are orders to match
@@ -123,9 +123,9 @@ public class OrderMatcherRaceConditionTest {
     @Test
     public void testMultiThreadedOrderMatching() throws InterruptedException {
         // Setup
-        OrderBook orderBook = new OrderBook();
+        LockedOrderBook orderBook = new LockedOrderBook();
         List<String> symbols = Collections.singletonList("AAPL");
-        OrderMatcher orderMatcher = new OrderMatcher(orderBook, symbols);
+        LockedOrderMatcher orderMatcher = new LockedOrderMatcher(orderBook, symbols);
 
         int numThreads = 10;
         int ordersPerThread = 20;
