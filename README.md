@@ -86,10 +86,10 @@ engine.stop();
 
 ```bash
 # Build the benchmark JAR
-mvn clean package -Pbenchmark
+mvn clean package -Pbenchmark -Dmaven.test.skip=true
 
 # Run all benchmarks
-java -jar target/benchmarks.jar
+java -jar target/benchmarks.jar > results.txt
 
 # Run specific benchmark
 java -jar target/benchmarks.jar OrderBookBenchmark.synchronizedOrderBookAddOnly

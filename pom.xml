@@ -96,7 +96,6 @@
 					<argLine>-ea</argLine>
 				</configuration>
 			</plugin>
-
 		</plugins>
 	</build>
 
@@ -105,7 +104,6 @@
 			<id>benchmark</id>
 			<build>
 				<plugins>
-					<!-- Remove the exec plugin -->
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-shade-plugin</artifactId>
@@ -122,6 +120,7 @@
 										<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
 											<mainClass>org.openjdk.jmh.Main</mainClass>
 										</transformer>
+										<transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
 									</transformers>
 									<filters>
 										<filter>

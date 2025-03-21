@@ -97,7 +97,7 @@ public class LockedOrderMatcher implements OrderMatcher, Runnable {
                         Trade trade = new Trade(symbol, tradePrice, matchedQuantity, buyOrder.getId(), sellOrder.getId());
                         trades.add(trade);
 
-                        System.out.println(trade);
+//                        System.out.println(trade);
                         
                         // Handle partial matches
                         if (matchedQuantity < buyOrder.getQuantity()) {

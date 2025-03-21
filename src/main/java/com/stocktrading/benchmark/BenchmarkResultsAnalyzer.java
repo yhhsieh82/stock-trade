@@ -7,8 +7,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Utility to analyze and visualize JMH benchmark results.
@@ -18,126 +16,172 @@ import java.util.regex.Pattern;
  */
 public class BenchmarkResultsAnalyzer {
 
-	static class BenchmarkResult {
-		String benchmark;
-		int threads;
-		int orders;
-		double throughput;
-		double error;
-
-		@Override
-		public String toString() {
-			return String.format("%s (threads=%d, orders=%d): %.2f ±%.2f ops/s",
-				benchmark, threads, orders, throughput, error);
-		}
-	}
-
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) {
 		if (args.length < 1) {
 			System.out.println("Please provide the path to the benchmark results file");
 			return;
 		}
-
-		List<BenchmarkResult> results = parseResults(args[0]);
-		generateReport(results);
+		
+		String filePath = args[0];
+		try {
+			List<BenchmarkResult> results = parseResultsFile(filePath);
+			
+			if (results.isEmpty()) {
+				System.out.println("No valid benchmark results found in the file.");
+				System.out.println("The file may contain errors or have an unexpected format.");
+				return;
+			}
+			
+			System.out.println("=== BENCHMARK SUMMARY ===");
+			printSummary(results);
+			
+			System.out.println("\n=== SCALING ANALYSIS ===");
+			analyzeScaling(results);
+			
+		} catch (IOException e) {
+			System.err.println("Error reading file: " + e.getMessage());
+		}
 	}
 
-	private static List<BenchmarkResult> parseResults(String filePath) throws IOException {
+	private static List<BenchmarkResult> parseResultsFile(String filePath) throws IOException {
 		List<BenchmarkResult> results = new ArrayList<>();
-		Pattern pattern = Pattern.compile("OrderBookBenchmark\\.(\\w+):(\\w+)=(\\d+):(\\w+)=(\\d+)\\s+.*\\s+(\\d+\\.\\d+)\\s+±\\s+(\\d+\\.\\d+)\\s+ops/s");
-
+		
 		try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
 			String line;
+			boolean resultsSection = false;
+			
 			while ((line = reader.readLine()) != null) {
-				Matcher matcher = pattern.matcher(line);
-				if (matcher.find()) {
-					BenchmarkResult result = new BenchmarkResult();
-					result.benchmark = matcher.group(1);
-
-					// Parse parameters (assuming numThreads and numOrders)
-					if ("numThreads".equals(matcher.group(2))) {
-						result.threads = Integer.parseInt(matcher.group(3));
-						result.orders = Integer.parseInt(matcher.group(5));
-					} else {
-						result.orders = Integer.parseInt(matcher.group(3));
-						result.threads = Integer.parseInt(matcher.group(5));
+				// Skip until we find the results table
+				if (line.contains("Benchmark") && line.contains("Mode") && line.contains("Cnt")) {
+					resultsSection = true;
+					continue;
+				}
+				
+				if (resultsSection && !line.trim().isEmpty() && !line.startsWith("#")) {
+					try {
+						BenchmarkResult result = parseBenchmarkLine(line);
+						if (result != null) {
+							results.add(result);
+						}
+					} catch (Exception e) {
+						// Skip malformed lines
+						System.err.println("Warning: Could not parse line: " + line);
+						e.printStackTrace();
 					}
-
-					result.throughput = Double.parseDouble(matcher.group(6));
-					result.error = Double.parseDouble(matcher.group(7));
-
-					results.add(result);
 				}
 			}
 		}
-
+		
 		return results;
 	}
 
-	private static void generateReport(List<BenchmarkResult> results) {
-		// Group by benchmark type
+	private static BenchmarkResult parseBenchmarkLine(String line) {
+		// Example line:
+		// OrderBookBenchmark.lockFreeOrderBookMatchingWorkload          100             2      AAPL  thrpt    5  4989.641 ± 2604.760  ops/s
+		
+		String[] parts = line.trim().split("\\s+");
+		
+		// Extract the benchmark name
+		String fullName = parts[0];
+		String[] nameParts = fullName.split("\\.");
+		String benchmarkName = nameParts[nameParts.length - 1];
+		
+		// Extract parameters - they are in fixed positions in the JMH output
+		int numOrders = Integer.parseInt(parts[1]);
+		int numThreads = Integer.parseInt(parts[2]);
+		String symbol = parts[3];
+		
+		// Find the score and error
+		// The format is typically: score ± error
+		double score = 0;
+		double error = 0;
+		
+		for (int i = 4; i < parts.length - 1; i++) {
+			if (parts[i].equals("±")) {
+				score = Double.parseDouble(parts[i-1]);
+				error = Double.parseDouble(parts[i+1]);
+				break;
+			}
+		}
+		
+		return new BenchmarkResult(benchmarkName, numOrders, numThreads, symbol, score, error);
+	}
+
+	private static void printSummary(List<BenchmarkResult> results) {
+		// Group by benchmark name
 		Map<String, List<BenchmarkResult>> byBenchmark = new HashMap<>();
+		
 		for (BenchmarkResult result : results) {
-			byBenchmark.computeIfAbsent(result.benchmark, k -> new ArrayList<>()).add(result);
+			byBenchmark.computeIfAbsent(result.benchmarkName, k -> new ArrayList<>()).add(result);
 		}
-
-		// Print summary by benchmark type
-		System.out.println("=== BENCHMARK SUMMARY ===");
+		
 		for (Map.Entry<String, List<BenchmarkResult>> entry : byBenchmark.entrySet()) {
-			System.out.println("\n== " + entry.getKey() + " ==");
-
-			// Group by order count
-			Map<Integer, List<BenchmarkResult>> byOrders = new HashMap<>();
+			System.out.println("\nBenchmark: " + entry.getKey());
+			System.out.println("Orders\tThreads\tThroughput (ops/s)");
+			
 			for (BenchmarkResult result : entry.getValue()) {
-				byOrders.computeIfAbsent(result.orders, k -> new ArrayList<>()).add(result);
-			}
-
-			// Print throughput by thread count for each order count
-			for (Map.Entry<Integer, List<BenchmarkResult>> orderEntry : byOrders.entrySet()) {
-				System.out.println("\nOrders: " + orderEntry.getKey());
-				System.out.println("Threads\tThroughput (ops/s)\tError");
-
-				// Sort by thread count
-				orderEntry.getValue().sort((a, b) -> Integer.compare(a.threads, b.threads));
-
-				for (BenchmarkResult result : orderEntry.getValue()) {
-					System.out.printf("%d\t%.2f\t±%.2f\n",
-						result.threads, result.throughput, result.error);
-				}
+				System.out.printf("%d\t%d\t%.2f ± %.2f%n", 
+						result.numOrders, result.numThreads, result.score, result.error);
 			}
 		}
+	}
 
-		// Print scaling analysis
-		System.out.println("\n=== SCALING ANALYSIS ===");
-		for (Map.Entry<String, List<BenchmarkResult>> entry : byBenchmark.entrySet()) {
-			System.out.println("\n== " + entry.getKey() + " ==");
-
-			// Group by order count
-			Map<Integer, List<BenchmarkResult>> byOrders = new HashMap<>();
-			for (BenchmarkResult result : entry.getValue()) {
-				byOrders.computeIfAbsent(result.orders, k -> new ArrayList<>()).add(result);
-			}
-
-			// Calculate scaling efficiency
-			for (Map.Entry<Integer, List<BenchmarkResult>> orderEntry : byOrders.entrySet()) {
-				System.out.println("\nOrders: " + orderEntry.getKey());
-				System.out.println("Threads\tScaling Efficiency");
-
-				// Sort by thread count
-				List<BenchmarkResult> sortedResults = new ArrayList<>(orderEntry.getValue());
-				sortedResults.sort((a, b) -> Integer.compare(a.threads, b.threads));
-
-				if (!sortedResults.isEmpty()) {
-					double baselineThroughput = sortedResults.get(0).throughput;
-					int baselineThreads = sortedResults.get(0).threads;
-
-					for (BenchmarkResult result : sortedResults) {
-						double idealThroughput = baselineThroughput * (result.threads / (double)baselineThreads);
-						double efficiency = (result.throughput / idealThroughput) * 100;
-						System.out.printf("%d\t%.2f%%\n", result.threads, efficiency);
+	private static void analyzeScaling(List<BenchmarkResult> results) {
+		// Group by benchmark name and numOrders
+		Map<String, Map<Integer, List<BenchmarkResult>>> grouped = new HashMap<>();
+		
+		for (BenchmarkResult result : results) {
+			grouped.computeIfAbsent(result.benchmarkName, k -> new HashMap<>())
+				   .computeIfAbsent(result.numOrders, k -> new ArrayList<>())
+				   .add(result);
+		}
+		
+		for (Map.Entry<String, Map<Integer, List<BenchmarkResult>>> benchmarkEntry : grouped.entrySet()) {
+			String benchmarkName = benchmarkEntry.getKey();
+			System.out.println("\nScaling analysis for: " + benchmarkName);
+			
+			for (Map.Entry<Integer, List<BenchmarkResult>> ordersEntry : benchmarkEntry.getValue().entrySet()) {
+				int numOrders = ordersEntry.getKey();
+				List<BenchmarkResult> resultsByThread = ordersEntry.getValue();
+				
+				// Sort by number of threads
+				resultsByThread.sort((a, b) -> Integer.compare(a.numThreads, b.numThreads));
+				
+				if (resultsByThread.size() > 1) {
+					System.out.println("\nOrders: " + numOrders);
+					System.out.println("Threads\tThroughput\tScaling Factor");
+					
+					BenchmarkResult baseline = resultsByThread.get(0);
+					System.out.printf("%d\t%.2f\t1.00 (baseline)%n", 
+							baseline.numThreads, baseline.score);
+					
+					for (int i = 1; i < resultsByThread.size(); i++) {
+						BenchmarkResult current = resultsByThread.get(i);
+						double scalingFactor = current.score / baseline.score;
+						System.out.printf("%d\t%.2f\t%.2f%n", 
+								current.numThreads, current.score, scalingFactor);
 					}
 				}
 			}
+		}
+	}
+
+	static class BenchmarkResult {
+		final String benchmarkName;
+		final int numOrders;
+		final int numThreads;
+		final String symbol;
+		final double score;
+		final double error;
+		
+		BenchmarkResult(String benchmarkName, int numOrders, int numThreads, String symbol, 
+						double score, double error) {
+			this.benchmarkName = benchmarkName;
+			this.numOrders = numOrders;
+			this.numThreads = numThreads;
+			this.symbol = symbol;
+			this.score = score;
+			this.error = error;
 		}
 	}
 }

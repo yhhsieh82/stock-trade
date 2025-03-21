@@ -49,7 +49,7 @@ public class OrderBookBenchmark {
 	@Param({"AAPL"})
 	private String symbol;
 
-	private LockedOrderBook synchronizedOrderBook;
+	private LockedOrderBook lockedOrderBook;
 	private LockFreeOrderBook lockFreeOrderBook;
 
 	private List<Order> buyOrders;
@@ -58,7 +58,7 @@ public class OrderBookBenchmark {
 
 	@Setup
 	public void setup() {
-		synchronizedOrderBook = new LockedOrderBook();
+		lockedOrderBook = new LockedOrderBook();
 		lockFreeOrderBook = new LockFreeOrderBook();
 
 		random = new Random(42); // Fixed seed for reproducibility
@@ -84,7 +84,7 @@ public class OrderBookBenchmark {
 	}
 
 	@Benchmark
-	public void synchronizedOrderBookAddOnly(Blackhole blackhole) throws InterruptedException {
+	public void lockedOrderBookAddOnly(Blackhole blackhole) throws InterruptedException {
 		ExecutorService executor = Executors.newFixedThreadPool(numThreads);
 		CountDownLatch latch = new CountDownLatch(numThreads);
 
@@ -100,11 +100,11 @@ public class OrderBookBenchmark {
 						int sellIndex = threadId * ordersPerThread + i;
 
 						if (buyIndex < buyOrders.size()) {
-							synchronizedOrderBook.addOrder(buyOrders.get(buyIndex));
+							lockedOrderBook.addOrder(buyOrders.get(buyIndex));
 						}
 
 						if (sellIndex < sellOrders.size()) {
-							synchronizedOrderBook.addOrder(sellOrders.get(sellIndex));
+							lockedOrderBook.addOrder(sellOrders.get(sellIndex));
 						}
 					}
 				} finally {
@@ -117,11 +117,11 @@ public class OrderBookBenchmark {
 		executor.shutdown();
 
 		// Return something to prevent dead code elimination
-		blackhole.consume(synchronizedOrderBook);
+		blackhole.consume(lockedOrderBook);
 	}
 
 	@Benchmark
-	public void synchronizedOrderBookMatchingWorkload(Blackhole blackhole) throws InterruptedException {
+	public void lockedOrderBookMatchingWorkload(Blackhole blackhole) throws InterruptedException {
 		LockedOrderBook orderBook = new LockedOrderBook();
 		LockedOrderMatcher matcher = new LockedOrderMatcher(orderBook, Collections.singletonList(symbol));
 
@@ -178,7 +178,7 @@ public class OrderBookBenchmark {
 	}
 
 	@Benchmark
-	public void synchronizedOrderBookHighContention(Blackhole blackhole) throws InterruptedException {
+	public void lockedOrderBookHighContention(Blackhole blackhole) throws InterruptedException {
 		LockedOrderBook orderBook = new LockedOrderBook();
 
 		ExecutorService executor = Executors.newFixedThreadPool(numThreads);
