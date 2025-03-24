@@ -1,7 +1,9 @@
 package com.stocktrading;
 
-import java.util.concurrent.*;
-import java.util.*;
+import java.util.Collections;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 public class LockFreeOrderBook implements OrderBook {
     // Map from symbol to buy orders for that symbol
